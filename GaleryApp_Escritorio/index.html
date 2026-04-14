@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABSAIDE — Galería de Arte Digital</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ---- extras para comentarios y detalle ---- */
+    .comment-item { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; }
+    .comment-header { display:flex; justify-content:space-between; margin-bottom:6px; }
+    .comment-author { font-weight:700; font-size:0.82rem; color:var(--accent); }
+    .comment-date   { font-size:0.75rem; color:var(--muted); }
+    .comment-text   { font-size:0.88rem; line-height:1.6; }
+    .comment-form   { display:flex; gap:10px; margin-top:16px; }
+    .comment-input  { flex:1; padding:10px 14px; background:var(--bg3); border:1.5px solid var(--border); border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:0.88rem; outline:none; }
+    .comment-input:focus { border-color:var(--accent); }
+    #detail-comments { max-height:220px; overflow-y:auto; }
+    .detail-meta { display:flex; gap:16px; flex-wrap:wrap; margin:12px 0; }
+    .detail-meta span { font-size:0.8rem; color:var(--muted); background:rgba(255,255,255,0.04); padding:4px 12px; border-radius:20px; border:1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar">
+  <div class="nav-logo" onclick="goTo('landing')">ABSAIDE</div>
+  <ul class="nav-menu">
+    <li class="nav-item logged-in-only"                                        onclick="goTo('dashboard')">Panel</li>
+    <li class="nav-item logged-in-only"                                        onclick="goTo('gallery')">Galería</li>
+    <!-- Coleccionista -->
+    <li class="nav-item logged-in-only role-hidden" id="nav-artists-li"        onclick="goTo('artists')">Artistas</li>
+    <li class="nav-item logged-in-only role-hidden" id="nav-emerging-li"       onclick="goTo('emerging')">Emergentes</li>
+    <!-- Artista -->
+    <li class="nav-item logged-in-only role-hidden" id="nav-myworks-li"        onclick="goTo('myworks')">Mis Obras</li>
+    <li class="nav-item logged-in-only role-hidden" id="nav-expos-li"          onclick="goTo('expos')">Exposiciones</li>
+    <!-- Admin -->
+    <li class="nav-item logged-in-only role-hidden" id="nav-users-li"          onclick="goTo('users')">Usuarios</li>
+    <li class="nav-item logged-in-only role-hidden" id="nav-stats-li"          onclick="goTo('stats')">Estadísticas</li>
+    <li class="nav-item logged-in-only role-hidden" id="nav-requests-li"       onclick="goTo('requests')">Solicitudes</li>
+    <!-- Todos -->
+    <li class="nav-item logged-in-only" id="nav-messages-li"                   onclick="goTo('messages')">✉️ Mensajes <span id="nav-msg-badge" style="display:none;background:var(--accent);color:#fff;border-radius:50%;padding:1px 6px;font-size:0.7rem;margin-left:4px">0</span></li>
+    <li class="nav-item logged-in-only"                                        onclick="goTo('profile')">Perfil</li>
+  </ul>
+  <div class="nav-right">
+    <div class="logged-out-only" style="gap:10px">
+      <button class="btn btn-ghost btn-sm"   onclick="goTo('login')">Iniciar Sesión</button>
+      <button class="btn btn-primary btn-sm" onclick="goTo('register')">Crear Cuenta</button>
+    </div>
+    <div class="logged-in-only" style="align-items:center;gap:12px">
+      <div class="user-chip" onclick="goTo('profile')">
+        <div class="user-chip-avatar" id="nav-avatar">?</div>
+        <span class="user-chip-name" id="nav-name">Usuario</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
+    </div>
+    <button class="hamburger" onclick="toggleMobile()">☰</button>
+  </div>
+</nav>
+
+<!-- MENÚ MÓVIL -->
+<div class="mobile-menu" id="mobile-menu">
+  <span class="nav-item logged-in-only"                                        onclick="goTo('dashboard');closeMobile()">Panel</span>
+  <span class="nav-item logged-in-only"                                        onclick="goTo('gallery');closeMobile()">Galería</span>
+  <span class="nav-item logged-in-only role-hidden" id="mob-artists-li"        onclick="goTo('artists');closeMobile()">Artistas</span>
+  <span class="nav-item logged-in-only role-hidden" id="mob-emerging-li"       onclick="goTo('emerging');closeMobile()">Emergentes</span>
+  <span class="nav-item logged-in-only role-hidden" id="mob-myworks-li"        onclick="goTo('myworks');closeMobile()">Mis Obras</span>
+  <span class="nav-item logged-in-only role-hidden" id="mob-expos-li"          onclick="goTo('expos');closeMobile()">Exposiciones</span>
+  <span class="nav-item logged-in-only role-hidden" id="mob-users-li"          onclick="goTo('users');closeMobile()">Usuarios</span>
+  <span class="nav-item logged-in-only role-hidden" id="mob-stats-li"          onclick="goTo('stats');closeMobile()">Estadísticas</span>
+  <span class="nav-item logged-in-only role-hidden" id="mob-requests-li"       onclick="goTo('requests');closeMobile()">Solicitudes</span>
+  <span class="nav-item logged-in-only" id="mob-messages-li"                   onclick="goTo('messages');closeMobile()">✉️ Mensajes</span>
+  <span class="nav-item logged-in-only"                                        onclick="goTo('profile');closeMobile()">Perfil</span>
+  <div class="logged-out-only" style="flex-direction:column;gap:10px;margin-top:8px">
+    <button class="btn btn-ghost"   onclick="goTo('login');closeMobile()">Iniciar Sesión</button>
+    <button class="btn btn-primary" onclick="goTo('register');closeMobile()">Crear Cuenta</button>
+  </div>
+  <div class="logged-in-only" style="flex-direction:column;gap:8px;margin-top:8px">
+    <button class="btn btn-ghost" onclick="logout();closeMobile()">Cerrar Sesión</button>
+  </div>
+</div>
+
+<main id="app">
+
+  <!-- ===== LANDING ===== -->
+  <section class="view" id="view-landing">
+    <div class="hero">
+
+      <!-- Fondos animados -->
+      <div class="hero-bg-grid"></div>
+      <div class="hero-orb hero-orb-1"></div>
+      <div class="hero-orb hero-orb-2"></div>
+      <div class="hero-orb hero-orb-3"></div>
+
+      <!-- Contenido central -->
+      <div class="hero-content">
+
+        <!-- Línea superior decorativa -->
+        <div class="hero-eyebrow">
+          <span class="hero-line"></span>
+          <span class="hero-eyebrow-text">Est. 2026 · Arte Digital Exclusivo</span>
+          <span class="hero-line"></span>
+        </div>
+
+        <!-- Logo principal -->
+        <div class="hero-logo" aria-label="Logo de ABSAIDE">
+          <div class="hero-logo-mark" aria-hidden="true">
+            <div class="hero-logo-frame hero-logo-frame-outer"></div>
+            <div class="hero-logo-frame hero-logo-frame-inner"></div>
+            <span class="hero-logo-stem"></span>
+          </div>
+          <div class="hero-logo-wordmark">
+            <div class="hero-logo-title">ÁBSAIDE</div>
+            <div class="hero-logo-subtitle">GALERÍA DE ARTE</div>
+          </div>
+        </div>
+
+        <!-- Tagline -->
+        <p class="hero-tagline">
+          Identidad visual contemporánea para una galería digital más clara, elegante y reconocible.
+        </p>
+
+        <!-- Divider ornamental -->
+        <div class="hero-divider">
+          <span></span><span class="hero-diamond">◆</span><span></span>
+        </div>
+
+        <!-- Descripción -->
+
+        <!-- Botones -->
+        <div class="hero-btns">
+          <button class="btn btn-primary hero-btn-main" onclick="goTo('register')">
+            Entrar a la Galería
+          </button>
+          <button class="btn btn-outline" onclick="goTo('login')">
+            Iniciar Sesión
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-num">1,247</div>
+            <div class="hero-stat-label">Artistas</div>
+          </div>
+          <div class="hero-stat-sep">|</div>
+          <div class="hero-stat">
+            <div class="hero-stat-num">456</div>
+            <div class="hero-stat-label">Obras</div>
+          </div>
+          <div class="hero-stat-sep">|</div>
+          <div class="hero-stat">
+            <div class="hero-stat-num">23</div>
+            <div class="hero-stat-label">Exposiciones</div>
+          </div>
+          <div class="hero-stat-sep">|</div>
+          <div class="hero-stat">
+            <div class="hero-stat-num">8.9k</div>
+            <div class="hero-stat-label">Reacciones</div>
+          </div>
+        </div>
+
+      </div><!-- /hero-content -->
+
+      <!-- Scroll hint -->
+      <div class="hero-scroll">
+        <span class="hero-scroll-line"></span>
+        <span class="hero-scroll-text">Explora</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== LOGIN ===== -->
+  <section class="view" id="view-login">
+    <div class="auth-page">
+      <div class="auth-card">
+        <div class="auth-art"></div>
+        <div class="auth-form-wrap">
+          <h2>Bienvenido</h2>
+          <p>Selecciona tu rol para continuar</p>
+
+          <div class="field" style="margin-top:24px"><label>Correo</label><input type="email" id="login-email" placeholder="tu@email.com"></div>
+          <div class="field"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+          <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="loginAs('user')">Iniciar Sesión</button>
+          <p class="auth-link">¿No tienes cuenta? <a onclick="goTo('register')">Crear una aquí</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== REGISTER ===== -->
+  <section class="view" id="view-register">
+    <div class="auth-page">
+      <div class="auth-card">
+        <div class="auth-art" style="background-image:url('assets/obra5.jpg')"></div>
+        <div class="auth-form-wrap">
+          <h2>Únete a Nosotros</h2>
+          <p>Crea tu cuenta gratuita y comienza tu viaje</p>
+          <div class="field"><label>Nombre completo</label><input type="text" id="reg-name" placeholder="Tu nombre"></div>
+          <div class="field"><label>Correo</label><input type="email" id="reg-email" placeholder="tu@email.com"></div>
+          <div class="field"><label>Contraseña</label><input type="password" id="reg-pass" placeholder="••••••••"></div>
+          <div class="field">
+            <label>Tipo de cuenta</label>
+            <select id="reg-role">
+              <option value="user">Coleccionista</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="register()">Crear Cuenta</button>
+          <p class="auth-link">¿Ya tienes cuenta? <a onclick="goTo('login')">Inicia sesión</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DASHBOARD ===== -->
+  <section class="view" id="view-dashboard">
+    <div class="page">
+      <div class="page-header"><h2>Panel de Control</h2><p id="dash-sub">Bienvenido de vuelta</p></div>
+      <div class="stats-row" id="dash-stats"></div>
+      <div class="dash-actions" id="dash-actions"></div>
+      <div id="dash-extra"></div>
+    </div>
+  </section>
+
+  <!-- ===== GALLERY ===== -->
+  <section class="view" id="view-gallery">
+    <div class="page gallery-page">
+      <div class="page-header gallery-header"><h2>Galería de Arte</h2><p>Explora una selección curada de obras y artistas.</p></div>
+      <div class="gallery-toolbar-panel">
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="gallery-search" placeholder="Buscar obra o artista…" oninput="filterGallery()">
+        </div>
+      </div>
+      <div class="gallery-tools">
+        <div class="gallery-selects">
+          <select id="gallery-artist-filter" class="gallery-select" onchange="setGalleryArtistFilter(this.value)">
+            <option value="all">Todos los artistas</option>
+          </select>
+          <select id="gallery-sort" class="gallery-select" onchange="setGallerySort(this.value)">
+            <option value="featured">Destacadas primero</option>
+            <option value="popular">Más populares</option>
+            <option value="title">Orden alfabético</option>
+          </select>
+        </div>
+        <div class="gallery-toggle-row">
+          <button id="gallery-favorites-toggle" class="chip" type="button" onclick="toggleGalleryFavorites()">Solo mis favoritas</button>
+          <button id="gallery-featured-toggle" class="chip" type="button" onclick="toggleGalleryFeatured()">Solo destacadas</button>
+          <button class="chip" type="button" onclick="clearGalleryFilters()">Limpiar filtros</button>
+        </div>
+      </div>
+      <div class="filter-chips">
+        <span class="chip active" data-filter="all"        onclick="setFilter(this,'gallery')">Todas</span>
+        <span class="chip"        data-filter="digital"    onclick="setFilter(this,'gallery')">Arte Digital</span>
+        <span class="chip"        data-filter="pintura"    onclick="setFilter(this,'gallery')">Pintura</span>
+        <span class="chip"        data-filter="fotografia" onclick="setFilter(this,'gallery')">Fotografía</span>
+        <span class="chip"        data-filter="escultura"  onclick="setFilter(this,'gallery')">Escultura</span>
+      </div>
+      </div>
+      <div id="compare-bar" class="compare-bar"></div>
+      <div id="gallery-summary" class="gallery-summary"></div>
+      <div id="gallery-trending" class="gallery-trending"></div>
+      <div class="cards-grid" id="gallery-grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== ARTISTAS (Coleccionista) ===== -->
+  <section class="view" id="view-artists">
+    <div class="page">
+      <div class="page-header"><h2>Nuestros Artistas</h2><p>Sigue a los creadores que más te inspiran</p></div>
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" placeholder="Buscar artista…" oninput="filterArtists(this.value)">
+        </div>
+      </div>
+      <div class="cards-grid" id="artists-grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== EMERGENTES (Coleccionista + Admin) ===== -->
+  <section class="view" id="view-emerging">
+    <div class="page">
+      <div class="page-header">
+        <h2>Artistas Emergentes</h2>
+        <p id="emerging-subtitle">Vota por los nuevos talentos de la comunidad</p>
+      </div>
+      <div id="emerging-admin-bar" style="display:none;margin-bottom:24px">
+        <div class="stat-box" style="display:inline-flex;align-items:center;gap:16px;padding:16px 24px;max-width:100%">
+          <span style="font-size:1.4rem">⭐</span>
+          <div>
+            <div style="font-size:0.85rem;font-weight:700">Criterio de promoción</div>
+            <div style="font-size:0.8rem;color:var(--muted)">Los artistas con <b style="color:var(--accent)">20 o más votos</b> pueden ser promovidos a Artistas Oficiales</div>
+          </div>
+        </div>
+      </div>
+      <div class="cards-grid" id="emerging-grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== MIS OBRAS (Artista) ===== -->
+  <section class="view" id="view-myworks">
+    <div class="page">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+        <div><h2>Mis Obras</h2><p>Gestiona tu portafolio artístico</p></div>
+        <button class="btn btn-primary" onclick="openModal('upload-modal')">🎨 Subir Obra</button>
+      </div>
+      <div class="cards-grid" id="myworks-grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== EXPOSICIONES (Artista) ===== -->
+  <section class="view" id="view-expos">
+    <div class="page">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+        <div><h2>Mis Exposiciones</h2><p>Organiza tus obras en colecciones temáticas</p></div>
+        <button class="btn btn-primary" onclick="openModal('expo-modal')">📅 Nueva Exposición</button>
+      </div>
+      <div id="expos-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== USUARIOS (Admin) ===== -->
+  <section class="view" id="view-users">
+    <div class="page">
+      <div class="page-header"><h2>Gestionar Usuarios</h2><p>Administra roles, permisos y estado de la comunidad</p></div>
+      <div class="search-bar" style="margin-bottom:24px">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" placeholder="Buscar por nombre o correo…" oninput="filterUsers(this.value)">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="modern-table">
+          <thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ESTADÍSTICAS (Admin) ===== -->
+  <section class="view" id="view-stats">
+    <div class="page">
+      <div class="page-header"><h2>Estadísticas</h2><p>Métricas en tiempo real de la plataforma</p></div>
+
+      <!-- Tarjetas resumen -->
+      <div class="stats-grid" style="margin-bottom:40px">
+        <div class="stat-card"><h3>Total Usuarios</h3><div class="num" id="stat-users">—</div></div>
+        <div class="stat-card"><h3>Obras en Galería</h3><div class="num" id="stat-artworks">—</div></div>
+        <div class="stat-card"><h3>Exposiciones</h3><div class="num" id="stat-expos">—</div></div>
+        <div class="stat-card"><h3>Total Reacciones</h3><div class="num" id="stat-reactions">—</div></div>
+      </div>
+
+      <!-- Filtro de período -->
+      <div class="page-header" style="margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <h2 style="font-size:1.4rem;margin:0">Usuarios registrados por período</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-outline" onclick="setStatsPeriod(7)"  id="period-7">7 días</button>
+          <button class="btn btn-sm btn-primary" onclick="setStatsPeriod(30)" id="period-30">30 días</button>
+          <button class="btn btn-sm btn-outline" onclick="setStatsPeriod(90)" id="period-90">90 días</button>
+          <button class="btn btn-sm btn-outline" onclick="setStatsPeriod(365)" id="period-365">1 año</button>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-bottom:40px">
+        <table class="modern-table">
+          <thead><tr><th>Fecha</th><th>Usuario</th><th>Correo</th><th>Rol</th></tr></thead>
+          <tbody id="stats-users-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Artistas con más obras -->
+      <div class="page-header" style="margin-bottom:16px"><h2 style="font-size:1.4rem">Artistas con más obras publicadas</h2></div>
+      <div class="table-wrap" style="margin-bottom:40px">
+        <table class="modern-table">
+          <thead><tr><th>#</th><th>Artista</th><th>Obras</th><th>Reacciones</th><th>Acción</th></tr></thead>
+          <tbody id="top-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Gestión de obras (admin eliminar) -->
+      <div class="page-header" style="margin-bottom:16px"><h2 style="font-size:1.4rem">Gestión de Obras</h2></div>
+      <div class="table-wrap">
+        <table class="modern-table">
+          <thead><tr><th>Obra</th><th>Artista</th><th>Categoría</th><th>Likes</th><th>Acción</th></tr></thead>
+          <tbody id="stats-artworks-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SOLICITUDES (Admin) ===== -->
+  <section class="view" id="view-requests">
+    <div class="page">
+      <div class="page-header"><h2>Solicitudes de Artista</h2><p>Revisa y gestiona las solicitudes para unirse como artista</p></div>
+      <div id="requests-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== PERFIL ===== -->
+  <section class="view" id="view-profile">
+    <div class="page">
+      <div class="page-header"><h2>Mi Perfil</h2><p id="profile-subtitle">Gestiona tu información</p></div>
+
+      <!-- Tarjeta principal (igual para todos) -->
+      <div class="profile-hero" id="profile-display">
+        <div class="profile-avatar-big" id="profile-av">?</div>
+        <div class="profile-info">
+          <h3 id="profile-name">Nombre</h3>
+          <p class="role-tag" id="profile-role">Rol</p>
+          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:6px" id="profile-email">Correo</p>
+          <p id="profile-bio">Biografía…</p>
+          <div style="margin-top:16px;display:flex;gap:10px">
+            <button class="btn btn-primary btn-sm" onclick="toggleEdit(true)">✏️ Editar Perfil</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario de edición (igual para todos) -->
+      <div id="profile-edit" class="hidden">
+        <div class="page-header" style="margin-bottom:24px;margin-top:8px"><h2 style="font-size:1.4rem">Editar Perfil</h2></div>
+        <div style="max-width:500px">
+          <div class="field"><label>Nombre</label><input id="ed-name" type="text"></div>
+          <div class="field"><label>Correo</label><input id="ed-email" type="email" placeholder="tu@email.com"></div>
+          <div class="field"><label>Biografía</label><textarea id="ed-bio" placeholder="Cuéntanos sobre ti..."></textarea></div>
+          <div class="field"><label>URL Foto de perfil</label><input id="ed-avatar" type="text" placeholder="https://..."></div>
+          <div style="display:flex;gap:12px;margin-top:8px">
+            <button class="btn btn-primary" onclick="saveProfile()">Guardar Cambios</button>
+            <button class="btn btn-ghost"   onclick="toggleEdit(false)">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección extra dinámica según rol -->
+      <div id="profile-role-section"></div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== LIGHTBOX ===== -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <div class="lightbox-inner">
+    <button class="lightbox-close" onclick="closeLightboxBtn()">✕</button>
+    <button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)">‹</button>
+    <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)">›</button>
+    <img id="lb-img" src="" alt="">
+    <div class="lightbox-meta"><h3 id="lb-title"></h3><p id="lb-desc"></p></div>
+  </div>
+</div>
+
+<!-- ===== MODALES ===== -->
+
+<!-- Detalle de obra + comentarios -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="max-width:640px">
+    <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    <input type="hidden" id="detail-id">
+    <img id="detail-img" src="" alt="" style="width:100%;border-radius:12px;margin-bottom:16px;max-height:300px;object-fit:cover">
+    <h3 id="detail-title" style="font-size:1.4rem;margin-bottom:4px"></h3>
+    <p id="detail-artist" style="color:var(--accent);font-size:0.82rem;font-weight:600;margin-bottom:8px"></p>
+    <p id="detail-desc" style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin-bottom:10px"></p>
+    <div class="detail-meta">
+      <span>🏷️ <span id="detail-cat"></span></span>
+      <span>❤️ <span id="detail-likes"></span> likes</span>
+    </div>
+    <div id="detail-comments"></div>
+    <div class="comment-form">
+      <input class="comment-input" id="comment-input" placeholder="Escribe un comentario…" onkeydown="if(event.key==='Enter')submitComment()">
+      <button class="btn btn-primary btn-sm" onclick="submitComment()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Subir obra (Artista) -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('upload-modal')">✕</button>
+    <h3>Subir Nueva Obra</h3>
+    <p>Comparte tu trabajo con la comunidad</p>
+    <div class="field"><label>Título *</label><input id="up-title" type="text" placeholder="Nombre de la obra"></div>
+    <div class="field"><label>Descripción *</label><textarea id="up-desc" placeholder="Describe tu obra…"></textarea></div>
+    <div class="field">
+        <label>Categoría</label>
+        <select id="up-cat">
+          <option value="digital">Arte Digital</option>
+          <option value="pintura">Pintura</option>
+          <option value="fotografia">Fotografía</option>
+          <option value="escultura">Escultura</option>
+        </select>
+      </div>
+    <div class="field"><label>Imagen (vista previa)</label><input id="up-file" type="file" accept="image/*" onchange="previewImg(this,'up-preview')"><div id="up-preview"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="submitUpload()">🎨 Subir Obra</button>
+      <button class="btn btn-ghost"   onclick="closeModal('upload-modal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Editar obra (Artista) -->
+<div class="modal-overlay" id="edit-work-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('edit-work-modal')">✕</button>
+    <h3>Editar Obra</h3>
+    <p>Modifica los detalles de tu obra</p>
+    <input type="hidden" id="edit-work-id">
+    <div class="field"><label>Título *</label><input id="edit-work-title" type="text"></div>
+    <div class="field"><label>Descripción</label><textarea id="edit-work-desc"></textarea></div>
+    <div class="field">
+      <label>Categoría</label>
+      <select id="edit-work-cat">
+        <option value="digital">Arte Digital</option>
+        <option value="pintura">Pintura</option>
+        <option value="fotografia">Fotografía</option>
+        <option value="escultura">Escultura</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveEditWork()">Guardar Cambios</button>
+      <button class="btn btn-ghost"   onclick="closeModal('edit-work-modal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nueva exposición (Artista) -->
+<div class="modal-overlay" id="expo-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('expo-modal')">✕</button>
+    <h3>Nueva Exposición</h3>
+    <p>Organiza tus obras en una colección temática</p>
+    <div class="field"><label>Nombre *</label><input id="expo-name" type="text" placeholder="Nombre de la exposición"></div>
+    <div class="field"><label>Descripción</label><textarea id="expo-desc" placeholder="Describe la temática…"></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Fecha inicio *</label><input id="expo-start" type="date"></div>
+      <div class="field"><label>Fecha fin *</label><input id="expo-end" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="submitExpo()">📅 Crear Exposición</button>
+      <button class="btn btn-ghost"   onclick="closeModal('expo-modal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Editar exposición (Artista) -->
+<div class="modal-overlay" id="edit-expo-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('edit-expo-modal')">✕</button>
+    <h3>Editar Exposición</h3>
+    <input type="hidden" id="edit-expo-id">
+    <div class="field"><label>Nombre *</label><input id="edit-expo-name" type="text"></div>
+    <div class="field"><label>Descripción</label><textarea id="edit-expo-desc"></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Fecha inicio</label><input id="edit-expo-start" type="date"></div>
+      <div class="field"><label>Fecha fin</label><input id="edit-expo-end" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveEditExpo()">Guardar Cambios</button>
+      <button class="btn btn-ghost"   onclick="closeModal('edit-expo-modal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Estadísticas de exposición (Artista) -->
+<div class="modal-overlay" id="expostats-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('expostats-modal')">✕</button>
+    <h3 id="expostats-name">Estadísticas</h3>
+    <p>Rendimiento de tu exposición</p>
+    <div id="expostats-body"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('expostats-modal')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Detalle de usuario (Admin) -->
+<div class="modal-overlay" id="user-detail-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('user-detail-modal')">✕</button>
+    <h3>Detalle de Usuario</h3>
+    <p>Información del miembro de la comunidad</p>
+    <div id="user-detail-body"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('user-detail-modal')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Solicitar ser artista (Coleccionista) -->
+<div class="modal-overlay" id="artist-req-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('artist-req-modal')">✕</button>
+    <h3>Solicitar ser Artista</h3>
+    <p>Cuéntanos sobre tu trabajo y sube una obra. Si el admin aprueba tu solicitud, tu obra aparecerá en Emergentes.</p>
+    <div class="field"><label>Describe tu estilo artístico *</label><textarea id="req-desc" placeholder="¿Qué tipo de arte creas? ¿Qué te inspira?"></textarea></div>
+    <div class="field"><label>Título de tu obra *</label><input id="req-obra-title" type="text" placeholder="Nombre de tu obra"></div>
+    <div class="field">
+      <label>Imagen de tu obra *</label>
+      <input type="file" id="req-obra-img" accept="image/*" style="padding:8px;width:100%;border:1px solid var(--border);border-radius:8px;background:var(--surface)" onchange="previewReqImg(this)">
+      <div id="req-obra-preview" style="margin-top:8px;border-radius:8px;overflow:hidden;max-height:160px;display:none">
+        <img id="req-obra-img-preview" style="width:100%;height:160px;object-fit:cover" alt="preview">
+      </div>
+    </div>
+    <div class="field"><label>Portafolio o sitio web</label><input id="req-web" type="url" placeholder="https://…"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="submitArtistReq()">✋ Enviar Solicitud</button>
+      <button class="btn btn-ghost"   onclick="closeModal('artist-req-modal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chat / Conversación -->
+<div class="modal-overlay" id="chat-modal">
+  <div class="modal" style="max-width:500px;padding:0;overflow:hidden;display:flex;flex-direction:column;height:580px">
+    <div class="chat-header">
+      <div class="chat-header-av" id="chat-av-letter">A</div>
+      <div style="flex:1;min-width:0">
+        <div class="chat-header-name" id="chat-artist">Artista</div>
+        <div class="chat-header-sub" id="chat-obra-sub">Sobre: <span id="chat-obra"></span></div>
+      </div>
+      <button class="modal-close" style="position:static;margin-left:auto" onclick="closeModal('chat-modal')">✕</button>
+    </div>
+    <div id="chat-messages" class="chat-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+    <div id="chat-sending" style="display:none;padding:4px 16px;font-size:0.78rem;color:var(--muted)">Enviando...</div>
+    <div class="chat-input-bar" style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px">
+      <input type="hidden" id="chat-key">
+      <input type="hidden" id="chat-receiver-id">
+      <input type="hidden" id="chat-artwork-id">
+      <input class="chat-text-input" id="chat-input" placeholder="Escribe tu mensaje…"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:24px;padding:10px 16px;color:var(--text);font-size:0.9rem;outline:none"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}">
+      <button class="btn btn-primary btn-sm" onclick="sendChatMessage()" style="border-radius:24px;padding:10px 20px">Enviar ➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- Comparador visual -->
+<div class="modal-overlay" id="compare-modal">
+  <div class="modal compare-modal">
+    <button class="modal-close" onclick="closeModal('compare-modal')">✕</button>
+    <h3>Comparador visual</h3>
+    <p>Revisa dos obras lado a lado por artista, emoción y descripción.</p>
+    <div id="compare-body" class="compare-body"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+<!-- Scroll top -->
+<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<button
+  id="accessibility-toggle"
+  class="accessibility-toggle"
+  type="button"
+  aria-label="Abrir opciones de accesibilidad"
+  aria-expanded="false"
+  onclick="toggleAccessibilityPanel()"
+>A</button>
+<div id="accessibility-panel" class="accessibility-panel" aria-hidden="true">
+  <h3>Accesibilidad</h3>
+  <p>Ajusta lectura, contraste y colores según tus necesidades.</p>
+
+  <div class="accessibility-section">
+    <label>Tamaño de texto</label>
+    <div class="accessibility-row">
+      <button id="font-size-small-btn" class="accessibility-option" type="button" onclick="setFontScalePreset(0.9)">Pequeño</button>
+      <button id="font-size-normal-btn" class="accessibility-option" type="button" onclick="setFontScalePreset(1)">Normal</button>
+      <button id="font-size-large-btn" class="accessibility-option" type="button" onclick="setFontScalePreset(1.2)">Grande</button>
+      <button id="font-size-xlarge-btn" class="accessibility-option" type="button" onclick="setFontScalePreset(1.4)">Muy grande</button>
+    </div>
+  </div>
+
+  <div class="accessibility-section">
+    <label>Fuente legible</label>
+    <div class="accessibility-row">
+      <button id="font-default-btn" class="accessibility-option" type="button" onclick="setReadableFont(false)">Normal</button>
+      <button id="font-readable-btn" class="accessibility-option" type="button" onclick="setReadableFont(true)">Lectura fácil</button>
+    </div>
+  </div>
+
+  <div class="accessibility-section">
+    <label>Contraste</label>
+    <div class="accessibility-row">
+      <button id="contrast-default-btn" class="accessibility-option" type="button" onclick="setHighContrast(false)">Normal</button>
+      <button id="contrast-high-btn" class="accessibility-option" type="button" onclick="setHighContrast(true)">Alto</button>
+    </div>
+  </div>
+
+  <div class="accessibility-section">
+    <label>Modo daltonismo</label>
+    <div class="accessibility-row">
+      <button id="color-default-btn" class="accessibility-option" type="button" onclick="setColorblindMode(false)">Normal</button>
+      <button id="colorblind-btn" class="accessibility-option" type="button" onclick="setColorblindMode(true)">Activar</button>
+    </div>
+  </div>
+
+  <div class="accessibility-section">
+    <label>Movimiento</label>
+    <div class="accessibility-row">
+      <button id="motion-default-btn" class="accessibility-option" type="button" onclick="setReduceMotion(false)">Normal</button>
+      <button id="motion-reduced-btn" class="accessibility-option" type="button" onclick="setReduceMotion(true)">Reducir</button>
+    </div>
+  </div>
+
+  <div class="accessibility-section">
+    <label>Espaciado de lectura</label>
+    <div class="accessibility-row">
+      <button id="spacing-default-btn" class="accessibility-option" type="button" onclick="setReadingSpacing(false)">Normal</button>
+      <button id="spacing-wide-btn" class="accessibility-option" type="button" onclick="setReadingSpacing(true)">Amplio</button>
+    </div>
+  </div>
+
+  <div class="accessibility-section">
+    <label>Lectura por voz</label>
+    <div class="accessibility-row">
+      <button id="speech-read-btn" class="accessibility-option" type="button" onclick="readCurrentViewAloud()">Leer vista</button>
+      <button id="speech-stop-btn" class="accessibility-option" type="button" onclick="stopSpeech()">Detener</button>
+    </div>
+  </div>
+
+  <div class="accessibility-section" style="margin-bottom:0">
+    <button class="accessibility-reset-btn" type="button" onclick="resetAccessibilityPrefs()">Restablecer accesibilidad</button>
+  </div>
+</div>
+
+  <!-- ===== MENSAJES (Todos los roles) ===== -->
+  <section class="view" id="view-messages">
+    <div class="page">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div><h2>Mensajes</h2><p>Conversaciones sobre obras de arte</p></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" id="msg-tab-inbox"  onclick="showMsgTab('inbox')"  style="font-weight:700">📥 Recibidos</button>
+          <button class="btn btn-ghost  btn-sm" id="msg-tab-sent"   onclick="showMsgTab('sent')">📤 Enviados</button>
+        </div>
+      </div>
+      <div id="messages-list" style="margin-top:20px"></div>
+    </div>
+  </section>
+
+<footer>
+  <p>&copy; 2026 <span>ABSAIDE</span> — Galería de Arte Digital. Todos los derechos reservados.</p>
+</footer>
+
+<script src="js/app.js"></script>
+<script src="js/ktor-config.js"></script>
+<script src="js/ktor-api.js"></script>
+</body>
+</html>
