@@ -96,6 +96,110 @@ async function ktorDeleteUser(id) {
   await api('/users/' + id, { method: 'DELETE', headers: authHeaders() });
 }
 
+async function ktorGetAllArtists() {
+  if (!_token) return [];
+  try {
+    const data = await api('/artists', { headers: authHeaders() });
+    if (Array.isArray(data)) return data;
+  } catch (e) {
+    console.warn('KTOR /artists fallback:', e.message);
+  }
+  const users = await ktorGetUsers();
+  return Array.isArray(users)
+    ? users.filter(function (u) {
+        var role = (u.role || '').toString().toUpperCase();
+        return role === 'ARTIST' || role === 'ARTISTA';
+      }).map(function (u) {
+        return {
+          id: u.id,
+          name: u.name,
+          bio: u.bio || '',
+          artworkCount: Array.isArray(artworks) ? artworks.filter(function (a) { return a.artist === u.name; }).length : 0,
+          followerCount: 0,
+          isFollowing: false
+        };
+      })
+    : [];
+}
+
+async function ktorGetSentMessages() {
+  if (!_token) return [];
+  const data = await api('/messages/sent', { headers: authHeaders() });
+  return Array.isArray(data) ? data : [];
+}
+
+async function ktorGetRequests() {
+  if (!_token) return [];
+  const data = await api('/requests', { headers: authHeaders() });
+  return Array.isArray(data) ? data : [];
+}
+
+async function ktorGetExpos() {
+  if (!_token) return [];
+  const data = await api('/expos', { headers: authHeaders() });
+  return Array.isArray(data) ? data : [];
+}
+
+async function ktorCreateExpo(payload) {
+  return await api('/expos', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  });
+}
+
+async function ktorUpdateExpo(id, payload) {
+  return await api('/expos/' + id, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  });
+}
+
+async function ktorVoteEmerging(id) {
+  return await api('/emerging/' + id + '/vote', {
+    method: 'POST',
+    headers: authHeaders()
+  });
+}
+
+async function ktorUnvoteEmerging(id) {
+  return await api('/emerging/' + id + '/vote', {
+    method: 'DELETE',
+    headers: authHeaders()
+  });
+}
+
+async function ktorSubmitRequest(payload) {
+  return await api('/requests', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  });
+}
+
+async function ktorProcessRequest(id, status) {
+  return await api('/requests/' + id, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify({ status })
+  });
+}
+
+async function ktorFollowArtist(artistId) {
+  return await api('/artists/' + artistId + '/follow', {
+    method: 'POST',
+    headers: authHeaders()
+  });
+}
+
+async function ktorUnfollowArtist(artistId) {
+  return await api('/artists/' + artistId + '/follow', {
+    method: 'DELETE',
+    headers: authHeaders()
+  });
+}
+
 /* ============================================================
    FAVORITOS
    ============================================================ */
