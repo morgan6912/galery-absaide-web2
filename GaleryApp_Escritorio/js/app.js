@@ -97,7 +97,6 @@ let galleryControls = {
   featuredOnly: false,
   emotion: 'all',
 };
-let compareSelection = [];
 
 /* ---- Persistencia ---- */
 function save(key, val) {
@@ -2398,69 +2397,6 @@ function setEmotionFilter(btn) {
   renderGallery();
 }
 
-function toggleCompareArtwork(id) {
-  var index = compareSelection.indexOf(id);
-  if (index > -1) compareSelection.splice(index, 1);
-  else {
-    if (compareSelection.length === 2) compareSelection.shift();
-    compareSelection.push(id);
-  }
-  renderGallery();
-}
-
-function renderCompareBar() {
-  var bar = document.getElementById('compare-bar');
-  if (!bar) return;
-  if (!compareSelection.length) {
-    bar.className = 'compare-bar';
-    bar.innerHTML = '';
-    return;
-  }
-  var selected = compareSelection.map(function(id){
-    return artworks.find(function(a){ return a.id === id; });
-  }).filter(Boolean);
-  bar.className = 'compare-bar open';
-  bar.innerHTML =
-    '<div><div class="compare-label">Comparador visual</div><div class="compare-pills">' +
-    selected.map(function(item){ return '<span class="compare-pill">'+item.title+'</span>'; }).join('') +
-    '</div></div>' +
-    '<div class="card-actions">' +
-    '<button class="btn btn-outline btn-sm" onclick="clearCompareSelection()">Limpiar</button>' +
-    '<button class="btn btn-primary btn-sm" onclick="openCompareModal()" ' + (selected.length < 2 ? 'disabled' : '') + '>Comparar ahora</button>' +
-    '</div>';
-}
-
-function clearCompareSelection() {
-  compareSelection = [];
-  renderGallery();
-}
-
-function openCompareModal() {
-  if (compareSelection.length < 2) {
-    toast('Selecciona dos obras para compararlas', 'error');
-    return;
-  }
-  var selected = compareSelection.map(function(id){
-    return artworks.find(function(a){ return a.id === id; });
-  }).filter(Boolean);
-  document.getElementById('compare-body').innerHTML = selected.map(function(item){
-    return '<div class="compare-panel">' +
-      '<img src="'+item.img+'" alt="'+item.title+'">' +
-      '<div class="compare-panel-copy">' +
-      '<span class="emotion-badge">Atmósfera: '+formatEmotionLabel(getPrimaryEmotion(item))+'</span>' +
-      '<h4>'+item.title+'</h4>' +
-      '<p style="color:var(--muted)">Por '+item.artist+'</p>' +
-      '<div class="compare-meta">' +
-      '<span>Categoría: '+item.cat+'</span>' +
-      '<span>Likes: '+(item.likes + (likedArtworks.has(item.id) ? 1 : 0))+'</span>' +
-      '<span>Comentarios: '+((item.comments || []).length)+'</span>' +
-      '</div>' +
-      '<p>'+item.desc+'</p>' +
-      '</div></div>';
-  }).join('');
-  openModal('compare-modal');
-}
-
 function getImmersiveSourceItems() {
   var items = getGalleryItems().filter(function(item){
     return galleryControls.emotion === 'all' || getArtworkEmotions(item).indexOf(galleryControls.emotion) > -1;
@@ -2505,7 +2441,6 @@ function stepImmersiveRoom(direction) {
 
 buildArtCard = function (a, i, list) {
   var liked = likedArtworks.has(a.id);
-  var compared = compareSelection.indexOf(a.id) > -1;
   var listStr = JSON.stringify(list).replace(/"/g,'&quot;');
   var isOwn = currentUser && currentUser.id === 'artist' && a.artist === currentUser.name;
   return '<div class="art-card" onclick="openLightbox('+i+',this)" data-list="'+listStr+'">' +
@@ -2531,7 +2466,6 @@ buildArtCard = function (a, i, list) {
     '<span>'+(liked?'❤️':'🤍')+'</span><span>'+(a.likes+(liked?1:0))+'</span>' +
     '</div></div></div>' +
     '<div class="art-card-actions">' +
-    '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();toggleCompareArtwork('+a.id+')">'+(compared?'Quitar comparación':'Comparar')+'</button>' +
     (!isOwn
       ? '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openChat(\''+a.artist+'\',\''+a.title+'\')">Me interesa esta obra</button>'
       : ''
@@ -2541,7 +2475,6 @@ buildArtCard = function (a, i, list) {
 };
 
 renderGallery = function () {
-  compareSelection = [];
   populateGalleryArtistFilter();
   renderGalleryFiltersUI();
   renderEmotionFilterUI();
@@ -2549,7 +2482,6 @@ renderGallery = function () {
     return galleryControls.emotion === 'all' || getArtworkEmotions(item).indexOf(galleryControls.emotion) > -1;
   });
   lightboxItems = items;
-  renderCompareBar();
   renderGallerySummary(items);
   renderGalleryTrends(items);
   var grid = document.getElementById('gallery-grid');
