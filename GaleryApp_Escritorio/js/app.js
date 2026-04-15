@@ -898,7 +898,7 @@ function toggleFollowArtist(id, btn) {
 /* ============================================================
    EMERGENTES
    ============================================================ */
-var PROMO_THRESHOLD = 20; // votos mínimos para que admin pueda promover
+var PROMO_THRESHOLD = 20; // votos recomendados para promoción (admin puede promover sin restricción)
 
 function renderEmerging() {
   var isAdmin  = currentUser && currentUser.id === 'admin';
@@ -946,8 +946,8 @@ function renderEmerging() {
             '<span class="badge badge-new">✓ Promovido a Artista Oficial</span>' +
             '</div>'
           : '<div class="card-actions">' +
-            '<button class="btn '+(canPromote?'btn-primary':'btn-ghost')+' btn-sm" '+(canPromote?'':'style="opacity:0.5;cursor:not-allowed" title="Necesita '+PROMO_THRESHOLD+' votos"')+' onclick="'+(canPromote?'promoteArtist(\''+e.id+'\')':'void 0')+'">' +
-            (canPromote ? '⭐ Promover a Oficial' : '🔒 Faltan '+(PROMO_THRESHOLD-totalVotes)+' votos') +
+            '<button class="btn btn-primary btn-sm" onclick="promoteArtist(\''+e.id+'\')">' +
+            '⭐ Promover a Oficial' +
             '</button>' +
             '<button class="btn btn-danger btn-sm" onclick="removeEmerging(\''+e.id+'\')">🗑️ Eliminar</button>' +
             '</div>'
@@ -980,7 +980,7 @@ function promoteArtist(id) {
   var e = emergingData.find(function(x){ return x.id === id; });
   if (!e) return;
   var totalVotes = e.likes + (likedEmerging.has(e.id) ? 1 : 0);
-  if (totalVotes < PROMO_THRESHOLD) { toast('No tiene suficientes votos todavía', 'error'); return; }
+  // Admin puede promover sin importar los votos
   if (!confirm('¿Promover a "'+e.artist+'" como Artista Oficial? Se cambiará su rol en el sistema.')) return;
 
   e.promoted = true;
