@@ -1001,14 +1001,55 @@ function promoteArtist(id) {
     save('artists', artistsData);
   }
 
-  // Cambiar rol en usersData local
+  // Cambiar rol en usersData local y backend
   var existingUser = usersData.find(function(u){
     return u.name === e.artist || u.email === e.artistEmail;
   });
+
   if (existingUser) {
+    // Usuario existe, cambiar rol localmente
     existingUser.role = 'Artista';
     save('users', usersData);
+
+    // Actualizar rol en el backend
+    var token = null;
+    try { token = localStorage.getItem('ktor_token'); } catch(e) {}
+    if (!token && typeof ktorApi !== 'undefined') {
+      try { token = ktorApi.token(); } catch(e) {}
+    }
+
+    if (token) {
+      fetch((window.KTOR_BASE_URL || 'http://localhost:8080') + '/users/' + existingUser.id + '/role', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ role: 'ARTIST' })
+      }).then(function(res) {
+        if (res.ok) {
+          // Si el usuario promovido es el que está logueado, actualizar currentUser
+          if (currentUser && (currentUser.name === e.artist || currentUser.email === e.artistEmail)) {
+            currentUser.role = 'Artista';
+            currentUser.id = 'artist'; // Cambiar el ID de rol para navegación
+            updateNavUser();
+            showRoleNav('artist');
+            save('last_role', 'artist');
+            toast('¡Felicidades! Has sido promovido a Artista Oficial. Tu rol se actualizó automáticamente.', 'success');
+          } else {
+            toast('✅ ' + e.artist + ' promovido a Artista Oficial en el sistema.', 'success');
+          }
+        } else {
+          toast('⚠️ Rol actualizado localmente, pero puede requerir reinicio de sesión para reflejarse completamente.', 'warning');
+        }
+      }).catch(function(e){
+        toast('⚠️ Rol actualizado localmente. Error de conexión: ' + e.message, 'warning');
+      });
+    } else {
+      toast('⚠️ Rol actualizado localmente. No hay sesión activa con el backend.', 'warning');
+    }
   } else {
+    // No hay usuario existente, crear uno localmente
     usersData.push({
       id:        Date.now(),
       name:      e.artist,
@@ -1018,24 +1059,7 @@ function promoteArtist(id) {
       createdAt: new Date().toISOString()
     });
     save('users', usersData);
-  }
-
-  // Cambiar rol en el backend Ktor
-  if (typeof ktorApi !== 'undefined' && ktorApi.token() && existingUser && existingUser.id) {
-    fetch((window.KTOR_BASE_URL || 'http://localhost:8080') + '/users/' + existingUser.id + '/role', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + ktorApi.token()
-      },
-      body: JSON.stringify({ role: 'ARTIST' })
-    }).then(function(){
-      toast('¡' + e.artist + ' es ahora Artista Oficial en el sistema! ⭐', 'success');
-    }).catch(function(){
-      toast('¡' + e.artist + ' promovido a Artista Oficial! ⭐', 'success');
-    });
-  } else {
-    toast('¡' + e.artist + ' promovido a Artista Oficial! ⭐', 'success');
+    toast('✅ ' + e.artist + ' promovido a Artista Oficial (usuario local creado).', 'success');
   }
 
   renderEmerging();
