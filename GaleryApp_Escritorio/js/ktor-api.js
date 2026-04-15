@@ -138,17 +138,18 @@ async function ktorGetMessages() {
    UPLOAD IMAGEN
    ============================================================ */
 async function ktorUploadImage(file) {
+  const CLOUD_NAME    = 'dkn0uaome';
+  const UPLOAD_PRESET = 'galery_absaide';
   const form = new FormData();
-  form.append('image', file);
-  const res  = await fetch(KTOR_BASE + '/upload/image', {
+  form.append('file', file);
+  form.append('upload_preset', UPLOAD_PRESET);
+  const res  = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD_NAME + '/image/upload', {
     method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + _token },
     body: form
   });
   const json = await res.json();
-  if (!res.ok) throw new Error(json.message || 'Error al subir imagen');
-  const url = (json.data && json.data.url) ? json.data.url : json.url || '';
-  return url;
+  if (!json.secure_url) throw new Error('Error al subir imagen a Cloudinary');
+  return json.secure_url;
 }
 
 /* ============================================================
